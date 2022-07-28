@@ -33,6 +33,7 @@
             events.Add(TeleportRandHumToIntercom); //15
             events.Add(KillHalfPlayers); //16
             events.Add(RespawnPlayerAsRandScp); //17
+            events.Add(RespawnHalfAsMTFHalfAsCI); //18
         }
 
         private void BroadcastToAllPlayers(string message)
@@ -71,7 +72,7 @@
 
         private void GiveDClassCom15()
         {
-            var players = Player.List.Where(p => p.Role == RoleType.ClassD);
+            var players = Player.Get(RoleType.ClassD);
 
             foreach (Player p in players)
             {
@@ -97,12 +98,12 @@
 
         private void TurnSpectatorsToZombie()
         {
-            var spectators = Player.List.Where(p => p.Role == RoleType.Spectator);
+            var spectators = Player.Get(RoleType.Spectator);
 
             foreach (Player p in spectators)
             {
-                p.SetRole(RoleType.Scp0492);
-                p.Position = Room.Get(RoomType.Hcz049).Position;
+                p.Position = new UnityEngine.Vector3(165.9f, 993.8f, -57f);
+                p.SetRole(RoleType.Scp0492, SpawnReason.Respawn, true);
             }
 
             BroadcastToAllPlayers("Walking dead!");
@@ -113,7 +114,7 @@
             var players = Player.List.Where(p => p.IsHuman);
             Player player = players.ElementAt(rand.Next(players.Count()));
             player.Position = Scp106Container.Position;
-            var scp106 = Player.List.Where(p => p.Role == RoleType.Scp106);
+            var scp106 = Player.Get(RoleType.Scp106);
 
             if (scp106 != null)
             {
@@ -140,17 +141,19 @@
 
         private void SwapDClassAndSec()
         {
-            var dClass = Player.Get(RoleType.ClassD);
-            var guards = Player.Get(RoleType.FacilityGuard);
+            List<Player> dClass = new List<Player>();
+            foreach (Player p in Player.Get(RoleType.ClassD))
+                dClass.Add(p);
 
-            foreach(Player p in guards) //TODO: fix
-            {
+            List<Player> guards = new List<Player>();
+            foreach (Player p in Player.Get(RoleType.FacilityGuard))
+                guards.Add(p);
+
+            foreach (Player p in guards)
                 p.SetRole(RoleType.ClassD, SpawnReason.None, true);
-            }
+
             foreach (Player p in dClass)
-            {
                 p.SetRole(RoleType.FacilityGuard, SpawnReason.None, true);
-            }
 
             BroadcastToAllPlayers("We do a little amount of team swapping...");
         }
@@ -280,13 +283,14 @@
         private void KillHalfPlayers()
         {
             var players = Player.List.Where(p => p.IsAlive);
-            //List<Player> playerL = players.ToList();
+            float halfPlayersCount = players.Count() / 2f;
 
-            for (int i = 0; i < players.Count()/2; i++)
+            Log.Info(halfPlayersCount);
+            for (int i = 0; i < halfPlayersCount; i++)
             {
+                Log.Info(halfPlayersCount);
                 int k = rand.Next(players.Count());
-                //playerL[k].Kill(DamageType.Unknown);
-                players.ElementAt(k);
+                players.ElementAt(k).Kill(DamageType.Unknown);
             }
 
             BroadcastToAllPlayers("Thanos has snaped his fingers!");
@@ -303,6 +307,24 @@
             BroadcastToAllPlayers("A random scp has been freed...");
         }
 
-    }
+        private void RespawnHalfAsMTFHalfAsCI()
+        {
+            List<Player> spectators = new List<Player>();
+            foreach (Player p in Player.Get(RoleType.Spectator))
+                spectators.Add(p);
 
+            for (int i = 0; i < spectators.Count; i++)
+            {
+                if (i % 2 == 0)
+                {
+                    spectators.ElementAt(i).SetRole(RoleType.NtfSergeant);
+                    continue;
+                }
+                spectators.ElementAt(i).SetRole(RoleType.ChaosRifleman);
+            }
+
+            BroadcastToAllPlayers("Dead players has been respawned and divided in two opposing teams...");
+        }
+
+    }
 }
