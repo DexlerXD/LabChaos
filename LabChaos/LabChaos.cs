@@ -2,25 +2,26 @@
 using System;
 using Exiled.API.Features;
 using ServerEvent = Exiled.Events.Handlers.Server;
+using Exiled.API.Enums;
 
 namespace LabChaos
 {
     public class LabChaos : Plugin<Config>
     {
         private ServerHandler serverHandler;
-        public static LabChaos Instance { get; set; }
+        public static LabChaos Instance { get; private set; }
 
         public override void OnEnabled()
         {
             RegisterEvents();
             Instance = this;
-            Log.Info("<color=green>LabChaos has succesfully been loaded!</color>");
             base.OnEnabled();
         }
 
         public override void OnDisabled()
         {
             UnregisterEvents();
+            Instance = null;
             base.OnDisabled();
         }
 
@@ -29,11 +30,13 @@ namespace LabChaos
             serverHandler = new ServerHandler();
 
             ServerEvent.RoundStarted += serverHandler.OnRoundStarted;
+            ServerEvent.RoundEnded += serverHandler.OnRoundEnded;
         }
 
         private void UnregisterEvents()
         {
             ServerEvent.RoundStarted -= serverHandler.OnRoundStarted;
+            ServerEvent.RoundEnded -= serverHandler.OnRoundEnded;
 
             serverHandler = null;
         }
@@ -41,5 +44,6 @@ namespace LabChaos
         public override string Name => "LabChaos";
         public override string Author => "Dexler";
         public override Version Version => new Version(1, 0, 0);
+        public override PluginPriority Priority => PluginPriority.Last;
     }
 }

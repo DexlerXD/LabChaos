@@ -19,10 +19,10 @@
             events.Add(GiveMicroToRandHum); //1
             events.Add(GiveDClassCom15); //2
             events.Add(ClearEveryoneInv); //3
-            //events.Add(TurnSpectatorsToZombie); //4
+            events.Add(TurnSpectatorsToZombie); //4
             events.Add(Contain106); //5
             events.Add(ShrinkPlayers); //6
-            //events.Add(SwapDClassAndSec); //7
+            events.Add(SwapDClassAndSec); //7
             events.Add(GiveCoinToEveryone); //8
             events.Add(SwapTwoPlayersInv); //9
             events.Add(GiveBlackCardToRandHum); //10
@@ -30,13 +30,12 @@
             events.Add(TurnOnFF); //12
             events.Add(GiveColaEffectToEveryone); //13
             events.Add(GiveRandomEffectToEveryone); //14
-            //events.Add(TeleportRandHumToIntercom); //15
+            events.Add(TeleportRandHumToIntercom); //15
             events.Add(KillHalfPlayers); //16
             events.Add(RespawnPlayerAsRandScp); //17
-            events.Add(ExpandPlayers); //18
         }
 
-        private void BroadcastAllPlayers(string message)
+        private void BroadcastToAllPlayers(string message)
         {
             foreach (Player p in Player.List)
             {
@@ -44,19 +43,30 @@
             }
         }
 
+        private void RemoveRandomItem(Player player)
+        {
+            player.RemoveItem(player.Items.ElementAt(rand.Next(player.Items.Count())));
+        }
+
         private void StartWarhead()
         {
             Warhead.Start();
-            BroadcastAllPlayers("Boom boom time");
+            BroadcastToAllPlayers("Boom boom time");
         }
 
         private void GiveMicroToRandHum()
         {
             var players = Player.List.Where(p => p.IsHuman);
             Player player = players.ElementAt(rand.Next(players.Count()));
+
+            if (InventorySystem.Inventory.MaxSlots - player.Items.Count() == 0)
+            {
+                RemoveRandomItem(player);
+            }
+
             player.AddItem(ItemType.MicroHID, 1);
 
-            BroadcastAllPlayers("Given MicroHid to a random human!");
+            BroadcastToAllPlayers("Given MicroHid to a random human!");
         }
 
         private void GiveDClassCom15()
@@ -69,7 +79,7 @@
                 p.AddAmmo(AmmoType.Nato9, 30);
             }
 
-            BroadcastAllPlayers("D bois revolution!");
+            BroadcastToAllPlayers("D bois revolution!");
         }
 
         private void ClearEveryoneInv()
@@ -82,7 +92,7 @@
                 }
             }
 
-            BroadcastAllPlayers("Where's your items, lads?");
+            BroadcastToAllPlayers("Where's your items, lads?");
         }
 
         private void TurnSpectatorsToZombie()
@@ -95,7 +105,7 @@
                 p.Position = Room.Get(RoomType.Hcz049).Position;
             }
 
-            BroadcastAllPlayers("Walking dead!");
+            BroadcastToAllPlayers("Walking dead!");
         }
 
         private void Contain106()
@@ -113,7 +123,7 @@
                 }
             }
 
-            BroadcastAllPlayers("Someone going to scream tonight... It's RE:containment time!");
+            BroadcastToAllPlayers("Someone going to scream tonight... It's RE:containment time!");
         }
 
         private void ShrinkPlayers()
@@ -125,7 +135,7 @@
                 p.Scale = new UnityEngine.Vector3(0.5f, 0.5f, 0.5f);
             }
 
-            BroadcastAllPlayers("It's shrinkin' time!");
+            BroadcastToAllPlayers("It's shrinkin' time!");
         }
 
         private void SwapDClassAndSec()
@@ -142,7 +152,7 @@
                 p.SetRole(RoleType.FacilityGuard, SpawnReason.None, true);
             }
 
-            BroadcastAllPlayers("We do a little amount of team swapping...");
+            BroadcastToAllPlayers("We do a little amount of team swapping...");
         }
 
         private void GiveCoinToEveryone()
@@ -153,13 +163,13 @@
                 int emptySlots = InventorySystem.Inventory.MaxSlots - p.Items.Count();
                 if (emptySlots == 0)
                 {
-                    p.RemoveItem(p.Items.ElementAt(rand.Next(p.Items.Count())));
+                    RemoveRandomItem(p);
                     emptySlots++;
                 }
                 p.AddItem(ItemType.Coin, emptySlots);
             }
 
-            BroadcastAllPlayers("Here comes the money!");
+            BroadcastToAllPlayers("Here comes the money!");
         }
 
         private void SwapTwoPlayersInv()
@@ -189,15 +199,21 @@
             p1.ClearInventory(false);
             p1.AddItem(p2TempItems);
 
-            BroadcastAllPlayers("Two players has swapped their inventories! But who are they?...");
+            BroadcastToAllPlayers("Two players has swapped their inventories! But who are they?...");
         }
 
         private void GiveBlackCardToRandHum()
         {
             Player player = Player.List.ElementAt(rand.Next(Player.List.Count()));
+
+            if (InventorySystem.Inventory.MaxSlots - player.Items.Count() == 0)
+            {
+                RemoveRandomItem(player);
+            }
+
             player.AddItem(ItemType.KeycardO5);
 
-            BroadcastAllPlayers("Someone got a V.I.P access!");
+            BroadcastToAllPlayers("Someone got a V.I.P access!");
         }
 
         private void TeleportRandPlayerToPocketDim()
@@ -205,6 +221,7 @@
             var players = Player.List.Where(p => p.IsHuman);
             Player player = players.ElementAt(rand.Next(players.Count()));
             player.Position = new UnityEngine.Vector3(0f, -1998.5f, 0f);
+            player.EnableEffect(EffectType.Corroding);
 
             foreach (Player p in Player.List)
             {
@@ -222,7 +239,7 @@
         {
             Server.FriendlyFire = true;
 
-            BroadcastAllPlayers("Friendly fire is on!");
+            BroadcastToAllPlayers("Friendly fire is on!");
         }
 
         private void GiveColaEffectToEveryone()
@@ -234,7 +251,7 @@
                 p.EnableEffect(EffectType.Scp207, 60);
             }
 
-            BroadcastAllPlayers("I'm fast as fuck boiiii");
+            BroadcastToAllPlayers("I'm fast as fuck boiiii");
         }
 
         private void GiveRandomEffectToEveryone()
@@ -246,7 +263,7 @@
                 p.ApplyRandomEffect(30f, true);
             }
 
-            BroadcastAllPlayers("Everyone got a random effect for 30 seconds!");
+            BroadcastToAllPlayers("Everyone got a random effect for 30 seconds!");
         }
 
         private void TeleportRandHumToIntercom()
@@ -254,25 +271,25 @@
             var humans = Player.List.Where(p => p.IsHuman);
             Player player = humans.ElementAt(rand.Next(humans.Count()));
 
-            player.Position = Room.Get(RoomType.EzIntercom).Position;
-            player.Position = new UnityEngine.Vector3(-18.5f, -1007.6f, 85.5f);
+            UnityEngine.Vector3 intercom = Room.Get(RoomType.EzIntercom).Position;
+            player.Position = new UnityEngine.Vector3(intercom.x, intercom.y - 6f, intercom.z);
 
-            BroadcastAllPlayers("Someone is locked in the intercom!");
+            BroadcastToAllPlayers("Someone is locked in the intercom!");
         }
 
         private void KillHalfPlayers()
         {
             var players = Player.List.Where(p => p.IsAlive);
-            List<Player> playerL = players.ToList();
+            //List<Player> playerL = players.ToList();
 
             for (int i = 0; i < players.Count()/2; i++)
             {
-                int k = rand.Next(playerL.Count());
-                playerL[k].Kill(DamageType.Unknown);
-                playerL.Remove(playerL[k]);
+                int k = rand.Next(players.Count());
+                //playerL[k].Kill(DamageType.Unknown);
+                players.ElementAt(k);
             }
 
-            BroadcastAllPlayers("Thanos has snaped his fingers!");
+            BroadcastToAllPlayers("Thanos has snaped his fingers!");
         }
 
         private void RespawnPlayerAsRandScp()
@@ -283,20 +300,9 @@
             Player player = players.ElementAt(rand.Next(players.Count()));
             player.SetRole(scps[rand.Next(scps.Count())]);
 
-            BroadcastAllPlayers("A random scp has been freed...");
+            BroadcastToAllPlayers("A random scp has been freed...");
         }
 
-        private void ExpandPlayers()
-        {
-            var players = Player.List.Where(p => p.IsAlive);
-
-            foreach (Player p in players)
-            {
-                p.Scale = new UnityEngine.Vector3(1.3f, 1.3f, 1.3f);
-            }
-
-            BroadcastAllPlayers("It's growin' time!");
-        }
     }
 
 }

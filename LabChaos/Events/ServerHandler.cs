@@ -2,6 +2,7 @@
 using MEC;
 using System.Collections.Generic;
 using LabChaos.Methods;
+using Exiled.Events.EventArgs;
 
 namespace LabChaos.Events
 {
@@ -11,16 +12,23 @@ namespace LabChaos.Events
 
         public void OnRoundStarted()
         {
-            Timing.RunCoroutine(EventCoroutine());
-            Log.Info("Starting event coroutine! Time set to: " + LabChaos.Instance.Config.TimeBetweenEvents);
+            Timing.RunCoroutine(EventsSequence());
+            Log.Info("Starting event sequence! Time set to: " + LabChaos.Instance.Config.TimeBetweenEvents);
         }
 
-        private IEnumerator<float> EventCoroutine()
+        public void OnRoundEnded(RoundEndedEventArgs ev)
+        {
+            Timing.KillCoroutines();
+            Server.FriendlyFire = false;
+        }
+
+        private IEnumerator<float> EventsSequence()
         {
             for (;;)
             {
                 yield return Timing.WaitForSeconds(LabChaos.Instance.Config.TimeBetweenEvents);
-                er.RandomizeEvent();
+                Log.Info("Firing an event!");
+                er.InvokeRandomEvent();
             }
         }
     }

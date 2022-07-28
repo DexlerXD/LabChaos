@@ -7,7 +7,7 @@ namespace LabChaos.Methods
         ChaosEvents chaosEv = new ChaosEvents();
         Random rand = new Random();
 
-        public void RandomizeEvent()
+        public void InvokeRandomEvent()
         {
             chaosEv.events[rand.Next(chaosEv.events.Count)].Invoke();
         }
