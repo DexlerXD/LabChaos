@@ -2,7 +2,7 @@
 using MEC;
 using System.Collections.Generic;
 using LabChaos.Methods;
-using Exiled.Events.EventArgs;
+using Exiled.Events.EventArgs.Server;
 
 namespace LabChaos.Events
 {

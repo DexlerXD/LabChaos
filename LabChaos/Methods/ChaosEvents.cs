@@ -3,8 +3,8 @@
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using PlayerRoles;
     using Exiled.API.Features;
-    using Exiled.API.Features.Roles;
     using Exiled.API.Enums;
     using Exiled.API.Features.Items;
 
@@ -15,25 +15,26 @@
 
         public ChaosEvents()
         {
-            events.Add(StartWarhead); //0
-            events.Add(GiveMicroToRandHum); //1
-            events.Add(GiveDClassCom15); //2
-            events.Add(ClearEveryoneInv); //3
-            events.Add(TurnSpectatorsToZombie); //4
-            events.Add(Contain106); //5
-            events.Add(ShrinkPlayers); //6
-            events.Add(SwapDClassAndSec); //7
-            events.Add(GiveCoinToEveryone); //8
-            events.Add(SwapTwoPlayersInv); //9
-            events.Add(GiveBlackCardToRandHum); //10
-            events.Add(TeleportRandPlayerToPocketDim); //11
-            events.Add(TurnOnFF); //12
-            events.Add(GiveColaEffectToEveryone); //13
-            events.Add(GiveRandomEffectToEveryone); //14
-            events.Add(TeleportRandHumToIntercom); //15
-            events.Add(KillHalfPlayers); //16
-            events.Add(RespawnPlayerAsRandScp); //17
-            events.Add(RespawnHalfAsMTFHalfAsCI); //18
+            events.Add(StartWarhead);
+            events.Add(GiveMicroToRandHum);
+            events.Add(GiveDClassCom15);
+            events.Add(ClearEveryoneInv);
+            events.Add(TurnSpectatorsToZombie);
+            //events.Add(Contain106);
+            events.Add(ShrinkPlayers);
+            events.Add(SwapDClassAndSec);
+            events.Add(GiveCoinToEveryone);
+            events.Add(SwapTwoPlayersInv);
+            events.Add(GiveBlackCardToRandHum);
+            events.Add(TeleportRandPlayerToPocketDim);
+            events.Add(TurnOnFF);
+            events.Add(GiveColaEffectToEveryone);
+            events.Add(GiveRandomEffectToEveryone);
+            events.Add(TeleportRandHumToIntercom);
+            events.Add(KillHalfPlayers);
+            events.Add(RespawnPlayerAsRandScp);
+            events.Add(RespawnHalfAsMTFHalfAsCI);
+            //add: give triple glock, give jailbird, give lasergun, give 1576, tp to 106 room
         }
 
         private void BroadcastToAllPlayers(string message)
@@ -72,7 +73,7 @@
 
         private void GiveDClassCom15()
         {
-            var players = Player.Get(RoleType.ClassD);
+            var players = Player.Get(RoleTypeId.ClassD);
 
             foreach (Player p in players)
             {
@@ -98,34 +99,34 @@
 
         private void TurnSpectatorsToZombie()
         {
-            var spectators = Player.Get(RoleType.Spectator);
+            var spectators = Player.Get(RoleTypeId.Spectator);
 
             foreach (Player p in spectators)
             {
                 p.Position = new UnityEngine.Vector3(165.9f, 993.8f, -57f);
-                p.SetRole(RoleType.Scp0492, SpawnReason.Respawn, true);
+                p.Role.Set(RoleTypeId.Scp0492, SpawnReason.Revived);
             }
 
             BroadcastToAllPlayers("Walking dead!");
         }
 
-        private void Contain106()
-        {
-            var players = Player.List.Where(p => p.IsHuman);
-            Player player = players.ElementAt(rand.Next(players.Count()));
-            player.Position = Scp106Container.Position;
-            var scp106 = Player.Get(RoleType.Scp106);
+        //private void Contain106()
+        //{
+        //    var players = Player.List.Where(p => p.IsHuman);
+        //    Player player = players.ElementAt(rand.Next(players.Count()));
+        //    player.Position = Scp106Container.Position;
+        //    var scp106 = Player.Get(RoleTypeId.Scp106);
 
-            if (scp106 != null)
-            {
-                foreach (Player p in scp106)
-                {
-                    p.Role.As<Scp106Role>().Contain(player);
-                }
-            }
+        //    if (scp106 != null)
+        //    {
+        //        foreach (Player p in scp106)
+        //        {
+        //            p.Role.As<Scp106Role>().Contain(player);
+        //        }
+        //    }
 
-            BroadcastToAllPlayers("Someone going to scream tonight... It's RE:containment time!");
-        }
+        //    BroadcastToAllPlayers("Someone going to scream tonight... It's RE:containment time!");
+        //}
 
         private void ShrinkPlayers()
         {
@@ -142,18 +143,18 @@
         private void SwapDClassAndSec()
         {
             List<Player> dClass = new List<Player>();
-            foreach (Player p in Player.Get(RoleType.ClassD))
+            foreach (Player p in Player.Get(RoleTypeId.ClassD))
                 dClass.Add(p);
 
             List<Player> guards = new List<Player>();
-            foreach (Player p in Player.Get(RoleType.FacilityGuard))
+            foreach (Player p in Player.Get(RoleTypeId.FacilityGuard))
                 guards.Add(p);
 
             foreach (Player p in guards)
-                p.SetRole(RoleType.ClassD, SpawnReason.None, true);
+                p.Role.Set(RoleTypeId.ClassD, RoleSpawnFlags.None);
 
             foreach (Player p in dClass)
-                p.SetRole(RoleType.FacilityGuard, SpawnReason.None, true);
+                p.Role.Set(RoleTypeId.FacilityGuard, RoleSpawnFlags.None);
 
             BroadcastToAllPlayers("We do a little amount of team swapping...");
         }
@@ -263,7 +264,7 @@
             
             foreach(Player p in players)
             {
-                p.ApplyRandomEffect(30f, true);
+                p.ApplyRandomEffect(EffectCategory.None, 30f, true);
             }
 
             BroadcastToAllPlayers("Everyone got a random effect for 30 seconds!");
@@ -298,11 +299,11 @@
 
         private void RespawnPlayerAsRandScp()
         {
-            RoleType[] scps = new RoleType[] { RoleType.Scp049, RoleType.Scp096, RoleType.Scp106, RoleType.Scp173, RoleType.Scp93953, RoleType.Scp93989 };
+            RoleTypeId[] scps = new RoleTypeId[] { RoleTypeId.Scp049, RoleTypeId.Scp096, RoleTypeId.Scp106, RoleTypeId.Scp173, RoleTypeId.Scp939};
 
-            var players = Player.List.Where(p => p.IsHuman || p.Role == RoleType.Spectator);
+            var players = Player.List.Where(p => p.IsHuman || p.Role == RoleTypeId.Spectator);
             Player player = players.ElementAt(rand.Next(players.Count()));
-            player.SetRole(scps[rand.Next(scps.Count())]);
+            player.Role.Set(scps[rand.Next(scps.Count())]);
 
             BroadcastToAllPlayers("A random scp has been freed...");
         }
@@ -310,17 +311,17 @@
         private void RespawnHalfAsMTFHalfAsCI()
         {
             List<Player> spectators = new List<Player>();
-            foreach (Player p in Player.Get(RoleType.Spectator))
+            foreach (Player p in Player.Get(RoleTypeId.Spectator))
                 spectators.Add(p);
 
             for (int i = 0; i < spectators.Count; i++)
             {
                 if (i % 2 == 0)
                 {
-                    spectators.ElementAt(i).SetRole(RoleType.NtfSergeant);
+                    spectators.ElementAt(i).Role.Set(RoleTypeId.NtfSergeant);
                     continue;
                 }
-                spectators.ElementAt(i).SetRole(RoleType.ChaosRifleman);
+                spectators.ElementAt(i).Role.Set(RoleTypeId.ChaosRifleman);
             }
 
             BroadcastToAllPlayers("Dead players has been respawned and divided in two opposing teams...");

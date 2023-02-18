@@ -9,7 +9,7 @@ namespace LabChaos.Commands
     {
         public string Command { get; } = "ChaosEvent";
 
-        public string[] Aliases { get; } = new[] { "cev" };
+        public string[] Aliases { get; } = new[] { "ce" };
 
         public string Description { get; } = "Fires ChaosEvent with specified ID";
 
@@ -17,7 +17,7 @@ namespace LabChaos.Commands
         {
             if (arguments.Count != 1)
             {
-                response = "bad args! usage: ChaosEvent/cev <id>";
+                response = "Bad arguments! usage: ChaosEvent/ce <id>";
                 return false;
             }
 
