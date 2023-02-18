@@ -16,6 +16,14 @@ namespace LabChaos
             RegisterEvents();
             Instance = this;
             base.OnEnabled();
+            string welcomeText = @"
+             _          _      ____ _                     
+            | |    __ _| |__  / ___| |__   __ _  ___  ___ 
+            | |   / _` | '_ \| |   | '_ \ / _` |/ _ \/ __|
+            | |__| (_| | |_) | |___| | | | (_| | (_) \__ \
+            |_____\__,_|_.__/ \____|_| |_|\__,_|\___/|___/                                   
+            ";
+            Log.Info(welcomeText);
         }
 
         public override void OnDisabled()

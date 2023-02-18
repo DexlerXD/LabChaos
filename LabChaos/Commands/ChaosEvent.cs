@@ -24,9 +24,8 @@ namespace LabChaos.Commands
             ChaosEvents chaosEv = new ChaosEvents();
             chaosEv.events[Convert.ToInt32(arguments.At(0))].Invoke();
 
-            response = "event fired successfully!";
+            response = "Event fired successfully!";
             return true;
         }
-
     }
 }

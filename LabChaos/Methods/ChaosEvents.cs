@@ -7,11 +7,13 @@
     using Exiled.API.Features;
     using Exiled.API.Enums;
     using Exiled.API.Features.Items;
+    using UnityEngine;
+    using MEC;
 
     public class ChaosEvents
     {
         public List<Action> events = new List<Action>();
-        Random rand = new Random();
+        System.Random rand = new System.Random();
 
         public ChaosEvents()
         {
@@ -20,13 +22,12 @@
             events.Add(GiveDClassCom15);
             events.Add(ClearEveryoneInv);
             events.Add(TurnSpectatorsToZombie);
-            //events.Add(Contain106);
             events.Add(ShrinkPlayers);
-            events.Add(SwapDClassAndSec);
+            events.Add(HumTeamSwapping);
             events.Add(GiveCoinToEveryone);
             events.Add(SwapTwoPlayersInv);
             events.Add(GiveBlackCardToRandHum);
-            events.Add(TeleportRandPlayerToPocketDim);
+            events.Add(TeleportRandHumToPocketDim);
             events.Add(TurnOnFF);
             events.Add(GiveColaEffectToEveryone);
             events.Add(GiveRandomEffectToEveryone);
@@ -34,15 +35,16 @@
             events.Add(KillHalfPlayers);
             events.Add(RespawnPlayerAsRandScp);
             events.Add(RespawnHalfAsMTFHalfAsCI);
-            //add: give triple glock, give jailbird, give lasergun, give 1576, tp to 106 room
+            events.Add(GiveTripleCOMToRandHum);
+            events.Add(GiveJailBirdToRandHum);
+            events.Add(GivePartDisruptorToRandHum);
+            events.Add(Give1576ToEveryone);
         }
 
         private void BroadcastToAllPlayers(string message)
         {
             foreach (Player p in Player.List)
-            {
                 p.Broadcast(new Broadcast(message), true);
-            }
         }
 
         private void RemoveRandomItem(Player player)
@@ -53,7 +55,7 @@
         private void StartWarhead()
         {
             Warhead.Start();
-            BroadcastToAllPlayers("Boom boom time");
+            BroadcastToAllPlayers("Boom boom time!");
         }
 
         private void GiveMicroToRandHum()
@@ -62,9 +64,7 @@
             Player player = players.ElementAt(rand.Next(players.Count()));
 
             if (InventorySystem.Inventory.MaxSlots - player.Items.Count() == 0)
-            {
                 RemoveRandomItem(player);
-            }
 
             player.AddItem(ItemType.MicroHID, 1);
 
@@ -89,9 +89,7 @@
             foreach (Player p in Player.List)
             {
                 if (p.IsHuman)
-                {
                     p.ClearInventory();
-                }
             }
 
             BroadcastToAllPlayers("Where's your items, lads?");
@@ -101,10 +99,16 @@
         {
             var spectators = Player.Get(RoleTypeId.Spectator);
 
+            Vector3 spawnPos;
+            if (AlphaWarheadController.Detonated)
+                spawnPos = Room.Get(RoomType.Surface).Transform.TransformPoint(Vector3.up);
+            else
+                spawnPos = Room.Get(RoomType.Hcz049).Transform.TransformPoint(Vector3.up);
+
             foreach (Player p in spectators)
             {
-                p.Position = new UnityEngine.Vector3(165.9f, 993.8f, -57f);
                 p.Role.Set(RoleTypeId.Scp0492, SpawnReason.Revived);
+                p.Position = spawnPos;
             }
 
             BroadcastToAllPlayers("Walking dead!");
@@ -133,28 +137,40 @@
             var players = Player.List.Where(p => p.IsAlive);
 
             foreach(Player p in players)
-            {
-                p.Scale = new UnityEngine.Vector3(0.5f, 0.5f, 0.5f);
-            }
+                p.Scale = new Vector3(0.5f, 0.5f, 0.5f);
 
             BroadcastToAllPlayers("It's shrinkin' time!");
         }
 
-        private void SwapDClassAndSec()
+        private void HumTeamSwapping()
         {
             List<Player> dClass = new List<Player>();
             foreach (Player p in Player.Get(RoleTypeId.ClassD))
                 dClass.Add(p);
 
-            List<Player> guards = new List<Player>();
-            foreach (Player p in Player.Get(RoleTypeId.FacilityGuard))
-                guards.Add(p);
+            List<Player> scientists = new List<Player>();
+            foreach (Player p in Player.Get(RoleTypeId.Scientist))
+                scientists.Add(p);
 
-            foreach (Player p in guards)
+            List<Player> ntf = new List<Player>();
+            foreach (Player p in Player.Get(Team.FoundationForces))
+                ntf.Add(p);
+
+            List<Player> ci = new List<Player>();
+            foreach (Player p in Player.Get(Team.ChaosInsurgency))
+                ci.Add(p);
+
+            foreach (Player p in scientists)
                 p.Role.Set(RoleTypeId.ClassD, RoleSpawnFlags.None);
 
             foreach (Player p in dClass)
-                p.Role.Set(RoleTypeId.FacilityGuard, RoleSpawnFlags.None);
+                p.Role.Set(RoleTypeId.Scientist, RoleSpawnFlags.None);
+
+            foreach (Player p in ntf)
+                p.Role.Set(RoleTypeId.ChaosRifleman, RoleSpawnFlags.None);
+
+            foreach (Player p in ci)
+                p.Role.Set(RoleTypeId.NtfSergeant, RoleSpawnFlags.None);
 
             BroadcastToAllPlayers("We do a little amount of team swapping...");
         }
@@ -188,14 +204,10 @@
             List<Item> p2TempItems = new List<Item>();
 
             foreach (Item item in p1.Items)
-            {
                 p1TempItems.Add(item);
-            }
 
             foreach (Item item in p2.Items)
-            {
                 p2TempItems.Add(item);
-            }
 
             p2.ClearInventory(false);
             p2.AddItem(p1TempItems);
@@ -203,28 +215,27 @@
             p1.ClearInventory(false);
             p1.AddItem(p2TempItems);
 
-            BroadcastToAllPlayers("Two players has swapped their inventories! But who are they?...");
+            BroadcastToAllPlayers("Two players have swapped their inventories! But who are they?...");
         }
 
         private void GiveBlackCardToRandHum()
         {
-            Player player = Player.List.ElementAt(rand.Next(Player.List.Count()));
+            var players = Player.List.Where(p => p.IsHuman);
+            Player player = players.ElementAt(rand.Next(players.Count()));
 
             if (InventorySystem.Inventory.MaxSlots - player.Items.Count() == 0)
-            {
                 RemoveRandomItem(player);
-            }
 
             player.AddItem(ItemType.KeycardO5);
 
-            BroadcastToAllPlayers("Someone got a V.I.P access!");
+            BroadcastToAllPlayers("Someone got a V.I.P. access!");
         }
 
-        private void TeleportRandPlayerToPocketDim()
+        private void TeleportRandHumToPocketDim()
         {
             var players = Player.List.Where(p => p.IsHuman);
             Player player = players.ElementAt(rand.Next(players.Count()));
-            player.Position = new UnityEngine.Vector3(0f, -1998.5f, 0f);
+            player.Position = new Vector3(0f, -1998.5f, 0f);
             player.EnableEffect(EffectType.Corroding);
 
             foreach (Player p in Player.List)
@@ -242,8 +253,15 @@
         private void TurnOnFF()
         {
             Server.FriendlyFire = true;
+            Timing.RunCoroutine(FFTimer());
 
-            BroadcastToAllPlayers("Friendly fire is on!");
+            BroadcastToAllPlayers("Friendly fire is on for 100 seconds!");
+        }
+
+        private IEnumerator<float> FFTimer()
+        {
+            yield return Timing.WaitForSeconds(100f);
+            Server.FriendlyFire = false;
         }
 
         private void GiveColaEffectToEveryone()
@@ -251,9 +269,7 @@
             var players = Player.List.Where(p => p.IsAlive);
 
             foreach(Player p in players)
-            {
                 p.EnableEffect(EffectType.Scp207, 60);
-            }
 
             BroadcastToAllPlayers("I'm fast as fuck boiiii");
         }
@@ -263,9 +279,7 @@
             var players = Player.List.Where(p => p.IsAlive);
             
             foreach(Player p in players)
-            {
                 p.ApplyRandomEffect(EffectCategory.None, 30f, true);
-            }
 
             BroadcastToAllPlayers("Everyone got a random effect for 30 seconds!");
         }
@@ -275,10 +289,10 @@
             var humans = Player.List.Where(p => p.IsHuman);
             Player player = humans.ElementAt(rand.Next(humans.Count()));
 
-            UnityEngine.Vector3 intercom = Room.Get(RoomType.EzIntercom).Position;
-            player.Position = new UnityEngine.Vector3(intercom.x, intercom.y - 6f, intercom.z);
+            Vector3 intercomPos = Intercom.Transform.TransformPoint(Vector3.forward * 3f);
+            player.Position = intercomPos;
 
-            BroadcastToAllPlayers("Someone is locked in the intercom!");
+            BroadcastToAllPlayers("Someone is locked up in the intercom!");
         }
 
         private void KillHalfPlayers()
@@ -324,8 +338,61 @@
                 spectators.ElementAt(i).Role.Set(RoleTypeId.ChaosRifleman);
             }
 
-            BroadcastToAllPlayers("Dead players has been respawned and divided in two opposing teams...");
+            BroadcastToAllPlayers("Dead players has been respawned and divided into two opposing teams...");
         }
 
+        private void GiveTripleCOMToRandHum()
+        {
+            var players = Player.List.Where(p => p.IsHuman);
+            Player player = players.ElementAt(rand.Next(players.Count()));
+
+            if (InventorySystem.Inventory.MaxSlots - player.Items.Count() == 0)
+                RemoveRandomItem(player);
+
+            player.AddItem(ItemType.GunCom45, 1);
+            player.AddAmmo(AmmoType.Nato9, 45);
+
+            BroadcastToAllPlayers("Someone got a triple gun!");
+        }
+
+        private void GiveJailBirdToRandHum()
+        {
+            var players = Player.List.Where(p => p.IsHuman);
+            Player player = players.ElementAt(rand.Next(players.Count()));
+
+            if (InventorySystem.Inventory.MaxSlots - player.Items.Count() == 0)
+                RemoveRandomItem(player);
+
+            player.AddItem(ItemType.Jailbird, 1);
+
+            BroadcastToAllPlayers("It's BONKing time!");
+        }
+
+        private void GivePartDisruptorToRandHum()
+        {
+            var players = Player.List.Where(p => p.IsHuman);
+            Player player = players.ElementAt(rand.Next(players.Count()));
+
+            if (InventorySystem.Inventory.MaxSlots - player.Items.Count() == 0)
+                RemoveRandomItem(player);
+
+            player.AddItem(ItemType.ParticleDisruptor, 1);
+
+            BroadcastToAllPlayers("Interesting gun, innit?");
+        }
+
+        private void Give1576ToEveryone()
+        {
+            var players = Player.List.Where(p => p.IsHuman);
+            foreach (Player p in players)
+            {
+                if (InventorySystem.Inventory.MaxSlots - p.Items.Count() == 0)
+                    RemoveRandomItem(p);
+
+                p.AddItem(ItemType.SCP1576, 1);
+            }
+
+            BroadcastToAllPlayers("Now you can talk with the dead!");
+        }
     }
 }
